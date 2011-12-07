@@ -7,7 +7,7 @@ import subprocess
 import logging
 import optparse
 
-from shell_utils import ShellUtils
+from proxmox_utils import KVMUtils, ShellUtils
                     
 def main():
   # ---------------------------------------------------------------
@@ -31,45 +31,35 @@ def main():
     raise Exception("The targed id must be numeric.")
 
   # ---------------------------------------------------------------
-  # Determine paths
-  # ---------------------------------------------------------------
-  path_from = "/var/lib/vz/images/t_" + template_name
-  path_to = "/var/lib/vz/images/" + id_to
-
-  # ---------------------------------------------------------------
   # Check paths
   # ---------------------------------------------------------------
-  if not os.path.exists(path_from):
+  if not KVMUtils.tpl_exists(template_name):
     raise Exception('The virtual machine template "%s" does not exist.' % template_name)
 
-  if os.path.exists(path_to):
+  if KVMUtils.exists(id_to):
     raise Exception('The virtual machine "%s" already exists.' % id_to)
 
   # ---------------------------------------------------------------
   # Copy machine files
   # ---------------------------------------------------------------
   logging.info("Cloning machine files...")
-  ShellUtils.command("cp -r %s %s" % (path_from, path_to))
+  ShellUtils.command(["cp", "-r", KVMUtils.tpl_image_path(template_name), KVMUtils.image_path(id_to)])
   logging.info("Cloning done")
   
   # ---------------------------------------------------------------
   # Copy configuration file
   # ---------------------------------------------------------------
   logging.info("Copying configuration file...")
-  ShellUtils.command("cp /etc/qemu-server/t_%s.conf /etc/qemu-server/%s.conf" % (template_name, id_to))
+  ShellUtils.command(["cp", KVMUtils.tpl_config_path(template_name), KVMUtils.config_path(id_to)])
   logging.info("Copying done")
 
   # ---------------------------------------------------------------
   # Ask for editing of new file
   # ---------------------------------------------------------------
   if ShellUtils.confirm("Cloning successfully. Do you want to edit the new configuration file?", True):
-    os.system("vim /etc/qemu-server/%s.conf" % id_to)
+    os.system("vim %s" % KVMUtils.config_path(id_to))
   
 if __name__ == '__main__':
-  try:
-    ShellUtils.configure_logging()
-    main()
-    exit(0)
-  except Exception, e:
-    print e
-    exit(1)
+  ShellUtils.configure_logging()
+  main()
+  exit(0)

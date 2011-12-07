@@ -7,7 +7,7 @@ import subprocess
 import logging
 import optparse
 
-from shell_utils import ShellUtils
+from proxmox_utils import KVMUtils, ShellUtils
                     
 def main():
   # ---------------------------------------------------------------
@@ -33,43 +33,43 @@ def main():
   # ---------------------------------------------------------------
   # Determine paths
   # ---------------------------------------------------------------
-  path_from = "/var/lib/vz/images/" + id_from
-  path_to = "/var/lib/vz/images/" + id_to
+  path_from = KVMUtils.image_path(id_from)
+  path_to = KVMUtils.image_path(id_to)
 
   # ---------------------------------------------------------------
   # Check paths
   # ---------------------------------------------------------------
-  if not os.path.exists(path_from):
+  if not KVMUtils.exists(id_from):
     raise Exception('The virtual machine "%s" does not exist.' % id_from)
 
-  if os.path.exists(path_to):
+  if KVMUtils.exists(id_to):
     raise Exception('The virtual machine "%s" already exists.' % id_to)
 
   # ---------------------------------------------------------------
   # Get source machine status
   # ---------------------------------------------------------------
-  source_status = ShellUtils.command("qm status %s" % id_from)
+  source_status = KVMUtils.status(id_from)
   if source_status == 'unknown':
     ShellUtils.confirm_continue("Source machine is in unknown state. Do you want to continue?", False)
   elif source_status == 'stopped':
     logging.info("Souce machine is stopped, continuing.")
   elif source_status == 'running':
     ShellUtils.confirm_continue("Source machine is currently running and has to be suspended before cloning. Do you want to continue?", False)
-    ShellUtils.command("qm suspend %s" % id_from)
+    KVMUtils.suspend(id_from)
     logging.info("Source machine suspended")
   
   # ---------------------------------------------------------------
   # Copy machine files
   # ---------------------------------------------------------------
   logging.info("Cloning machine files...")
-  ShellUtils.command("cp -r %s %s" % (path_from, path_to))
+  ShellUtils.command(["cp", "-r", path_from, path_to])
   logging.info("Cloning done")
   
   # ---------------------------------------------------------------
   # Copy configuration file
   # ---------------------------------------------------------------
   logging.info("Copying configuration file...")
-  ShellUtils.command("cp /etc/qemu-server/%s.conf /etc/qemu-server/%s.conf" % (id_from, id_to))
+  ShellUtils.command(["cp", "/etc/qemu-server/" + id_from + ".conf",  "/etc/qemu-server/" + id_to + ".conf"])
   logging.info("Copying done")
 
   # ---------------------------------------------------------------
@@ -77,20 +77,16 @@ def main():
   # ---------------------------------------------------------------
   if source_status == 'running':
     logging.info("Resume suspended source machine...")
-    ShellUtils.command("qm resume %s" % id_from)
+    KVMUtils.suspend(id_from)
     logging.info("Resumed")
   
   # ---------------------------------------------------------------
   # Ask for editing of new file
   # ---------------------------------------------------------------
   if ShellUtils.confirm("Cloning successfully. Do you want to edit the new configuration file?", True):
-    os.system("vim /etc/qemu-server/%s.conf" % id_to)
+    os.system("vim " + KVMUtils.config_path(id_to))
   
 if __name__ == '__main__':
-  try:
-    ShellUtils.configure_logging()
-    main()
-    exit(0)
-  except Exception, e:
-    print e
-    exit(1)
+  ShellUtils.configure_logging()
+  main()
+  exit(0)

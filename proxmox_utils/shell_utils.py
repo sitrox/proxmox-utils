@@ -8,21 +8,33 @@ class ShellUtils(object):
       format='%(asctime)s %(levelname)s %(message)s')
 
   @classmethod
-  def command(cls, command, expected_retvals=[0], wait=True):
-    process = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+  def command(cls, command, expected_retvals=[0], wait=True, shell=False):
+    if isinstance(command, basestring):
+      raise Exception("String commands are not supported.")
+    process = subprocess.Popen(command, shell=shell, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
     if not wait:
       return
     lines = process.stdout.readlines()
     retval = process.wait()
     res = ''.join(lines).lstrip().rstrip()
     if not retval in expected_retvals:
-      raise Exception('The command "' + command + '" could not be executed.')
+      raise Exception('The command "' + ' '.join(command) + '" could not be executed.')
     return res
   
   @classmethod
   def confirm_continue(cls, prompt="Do you want to continue?", resp=False, exit_code=0):
     if not cls.confirm(prompt, resp):
       exit(exit_code)
+  
+  def cp(cls, file_from, file_to, recursive=False):
+    command = ['cp']
+    
+    if recursive:
+      command.push('-r')
+    
+    command += [file_from, file_to]
+    print command
+    #ShellUtils.command(command)
   
   @classmethod
   def confirm(cls, prompt=None, resp=False):

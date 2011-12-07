@@ -7,7 +7,7 @@ import subprocess
 import logging
 import optparse
 
-from shell_utils import ShellUtils
+from proxmox_utils import KVMUtils, ShellUtils
                     
 def main():
   paths = os.listdir('/etc/qemu-server')
@@ -20,13 +20,8 @@ def main():
     match = re.match(REGEX_TEMPLATE, path)
     if match:
       print match.group(1)
-    
   
 if __name__ == '__main__':
-  try:
-    ShellUtils.configure_logging()
-    main()
-    exit(0)
-  except Exception, e:
-    print e
-    exit(1)
+  ShellUtils.configure_logging()
+  main()
+  exit(0)

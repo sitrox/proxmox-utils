@@ -7,13 +7,13 @@ import subprocess
 import logging
 import optparse
 
-from shell_utils import ShellUtils
+from proxmox_utils import KVMUtils, ShellUtils
                     
 def main():
   # ---------------------------------------------------------------
   # Option handling
   # ---------------------------------------------------------------
-  usage = "usage: %prog [options] <machine-id>"
+  usage = "usage: %prog [options] <machine-id or template-name>"
   parser = optparse.OptionParser(usage)
   
   options, args = parser.parse_args()
@@ -25,30 +25,45 @@ def main():
   # Grab options
   # ---------------------------------------------------------------
   machine_id = args[0]
+  is_template = False
   
-  if not machine_id.isdigit():
-    raise Exception("The machine id must be numeric.")
+  if re.match(KVMUtils.REGEX_TEMPLATE_NAME, machine_id) and not machine_id.isdigit():
+    template_name = machine_id
+    machine_id = "t_%s" % template_name
+    is_template = True
+  elif not machine_id.isdigit():
+    raise Exception("Please provide a numeric machine id or a template name.")
 
   # ---------------------------------------------------------------
   # Determine paths
+  # ---------------------------------------------------------------  
+  img_path = KVMUtils.image_path(machine_id)
+  config_path = KVMUtils.config_path(machine_id)
+  
   # ---------------------------------------------------------------
-  img_path = "/var/lib/vz/images/%s" % machine_id
-  config_path = "/etc/qemu-server/%s.conf" % machine_id
+  # Check if machine exists
+  # ---------------------------------------------------------------
+  if not KVMUtils.exists(machine_id):
+    raise Exception("The machine does not exist.")
 
   # ---------------------------------------------------------------
   # Confirmation
   # ---------------------------------------------------------------
-  ShellUtils.confirm_continue("Do you really want to delete the machine %s?" % machine_id, False)
+  what = 'template' if is_template else 'machine'
+  which = template_name if is_template else machine_id
+  
+  ShellUtils.confirm_continue("Do you really want to delete the %s %s?" % (what, which), False)
 
   # ---------------------------------------------------------------
   # Check if running
   # ---------------------------------------------------------------
-  source_status = ShellUtils.command("qm status %s" % machine_id)
-  if source_status == 'running':
-    ShellUtils.confirm_continue("Source machine is currently running. Do you want to stop if before removal?", True)
-    logging.info("Stopping machine %s..." % machine_id)
-    ShellUtils.command("qm stop %s" % machine_id)
-    logging.info("Machine %s stopped" % machine_id)
+  if not is_template:
+    source_status = KVMUtils.status(machine_id)
+    if source_status == 'running':
+      ShellUtils.confirm_continue("Source machine is currently running. Do you want to stop if before removal?", True)
+      logging.info("Stopping machine %s..." % machine_id)
+      KVMUtils.stop(machine_id)
+      logging.info("Machine %s stopped" % machine_id)
 
   # ---------------------------------------------------------------
   # Remove files
@@ -57,16 +72,12 @@ def main():
 
   for directory in to_remove:
     if ShellUtils.confirm("Removing `%s`. Continue?" % directory):
-      ShellUtils.command("rm -rf %s" % directory)
+      ShellUtils.command(["rm", "-rf", directory])
       logging.info("Path removed")
     else:
       logging.info("Directory not removed")
 
 if __name__ == '__main__':
-  try:
-    ShellUtils.configure_logging()
-    main()
-    exit(0)
-  except Exception, e:
-    print e
-    exit(1)
+  ShellUtils.configure_logging()
+  main()
+  exit(0)

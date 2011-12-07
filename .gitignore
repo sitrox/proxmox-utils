@@ -1,0 +1,10 @@
+*.pyc
+*.vim.sess
+*.pyo
+*.swp
+*.swo
+/proxmox_utils.egg-info
+*.egg
+build
+dist
+MANIFEST
