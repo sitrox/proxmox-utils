@@ -1,0 +1,103 @@
+#!/usr/bin/env python
+
+import os
+import re
+import sys
+import subprocess
+import logging
+import optparse
+
+from shell_utils import ShellUtils
+                    
+def main():
+  # ---------------------------------------------------------------
+  # Option handling
+  # ---------------------------------------------------------------
+  usage = "usage: %prog [options] <machine-id> <template-name>"
+  parser = optparse.OptionParser(usage)
+  
+  options, args = parser.parse_args()
+
+  if not len(args) == 2:
+    parser.error("Wrong number of arguments.")
+  
+  # ---------------------------------------------------------------
+  # Grab options
+  # ---------------------------------------------------------------
+  id_from = args[0]
+  template_name = args[1]
+  
+  REGEX_TEMPLATE_NAME = '^[a-zA-Z0-9_-]+$'
+  
+  if not re.match(REGEX_TEMPLATE_NAME, template_name):
+    raise Exception("The template name is not valid (must validate with `%s`)." % REGEX_TEMPLATE_NAME)
+  
+  # ---------------------------------------------------------------
+  # Determine paths
+  # ---------------------------------------------------------------
+  source_image_path = "/var/lib/vz/images/" + id_from
+  target_image_path = "/var/lib/vz/images/t_" + template_name
+  source_config_path = "/etc/qemu-server/%s.conf" % id_from
+  target_config_path = "/etc/qemu-server/t_%s.conf" % template_name
+  
+  # ---------------------------------------------------------------
+  # Check if source machine exists
+  # ---------------------------------------------------------------
+  if not os.path.exists(source_image_path) or not os.path.exists(source_config_path):
+    raise Exception('The source machine "%s" does not exist.' % id_from)
+  
+  # ---------------------------------------------------------------
+  # Check if template exists
+  # ---------------------------------------------------------------
+  if os.path.exists(target_image_path) or os.path.exists(target_config_path):
+    raise Exception('The virtual machine template "%s" already exists.' % template_name)
+  
+  # ---------------------------------------------------------------
+  # Get source machine status
+  # ---------------------------------------------------------------
+  source_status = ShellUtils.command("qm status %s" % id_from)
+  if source_status == 'unknown':
+    ShellUtils.confirm_continue("Source machine is in unknown state. Do you want to continue?", False)
+  elif source_status == 'stopped':
+    logging.info("Souce machine is stopped, continuing.")
+  elif source_status == 'running':
+    ShellUtils.confirm_continue("Source machine is currently running and has to be suspended before cloning. Do you want to continue?", False)
+    ShellUtils.command("qm suspend %s" % id_from)
+    logging.info("Source machine suspended")
+
+  # ---------------------------------------------------------------
+  # Copy machine files
+  # ---------------------------------------------------------------
+  logging.info("Cloning machine files...")
+  ShellUtils.command("cp -r %s %s" % (source_image_path, target_image_path))
+  logging.info("Cloning done")
+  
+  # ---------------------------------------------------------------
+  # Copy configuration file
+  # ---------------------------------------------------------------
+  logging.info("Copying configuration file...")
+  ShellUtils.command("cp %s %s" % (source_config_path, target_config_path))
+  logging.info("Copying done")
+  
+  # ---------------------------------------------------------------
+  # Resume machine if suspended
+  # ---------------------------------------------------------------
+  if source_status == 'running':
+    logging.info("Resume suspended source machine...")
+    ShellUtils.command("qm resume %s" % id_from)
+    logging.info("Resumed")
+  
+  # ---------------------------------------------------------------
+  # Ask for editing of new file
+  # ---------------------------------------------------------------
+  if ShellUtils.confirm("Template created successfully. Do you want to edit the new configuration file?", True):
+    os.system("vim %s" % target_config_path)
+  
+if __name__ == '__main__':
+  try:
+    ShellUtils.configure_logging()
+    main()
+    exit(0)
+  except Exception, e:
+    print e
+    exit(1)

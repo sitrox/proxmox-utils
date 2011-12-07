@@ -1,0 +1,72 @@
+#!/usr/bin/env python
+
+import os
+import re
+import sys
+import subprocess
+import logging
+import optparse
+
+from shell_utils import ShellUtils
+                    
+def main():
+  # ---------------------------------------------------------------
+  # Option handling
+  # ---------------------------------------------------------------
+  usage = "usage: %prog [options] <machine-id>"
+  parser = optparse.OptionParser(usage)
+  
+  options, args = parser.parse_args()
+
+  if not len(args) == 1:
+    parser.error("Wrong number of arguments.")
+  
+  # ---------------------------------------------------------------
+  # Grab options
+  # ---------------------------------------------------------------
+  machine_id = args[0]
+  
+  if not machine_id.isdigit():
+    raise Exception("The machine id must be numeric.")
+
+  # ---------------------------------------------------------------
+  # Determine paths
+  # ---------------------------------------------------------------
+  img_path = "/var/lib/vz/images/%s" % machine_id
+  config_path = "/etc/qemu-server/%s.conf" % machine_id
+
+  # ---------------------------------------------------------------
+  # Confirmation
+  # ---------------------------------------------------------------
+  ShellUtils.confirm_continue("Do you really want to delete the machine %s?" % machine_id, False)
+
+  # ---------------------------------------------------------------
+  # Check if running
+  # ---------------------------------------------------------------
+  source_status = ShellUtils.command("qm status %s" % machine_id)
+  if source_status == 'running':
+    ShellUtils.confirm_continue("Source machine is currently running. Do you want to stop if before removal?", True)
+    logging.info("Stopping machine %s..." % machine_id)
+    ShellUtils.command("qm stop %s" % machine_id)
+    logging.info("Machine %s stopped" % machine_id)
+
+  # ---------------------------------------------------------------
+  # Remove files
+  # ---------------------------------------------------------------
+  to_remove = [img_path, config_path]
+
+  for directory in to_remove:
+    if ShellUtils.confirm("Removing `%s`. Continue?" % directory):
+      ShellUtils.command("rm -rf %s" % directory)
+      logging.info("Path removed")
+    else:
+      logging.info("Directory not removed")
+
+if __name__ == '__main__':
+  try:
+    ShellUtils.configure_logging()
+    main()
+    exit(0)
+  except Exception, e:
+    print e
+    exit(1)
