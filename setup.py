@@ -2,7 +2,7 @@
 from setuptools import setup
 import os
 
-fp = open(os.path.join(os.path.dirname(__file__), "README"))
+fp = open(os.path.join(os.path.dirname(__file__), "README.rst"))
 readme_text = fp.read()
 fp.close()
 
