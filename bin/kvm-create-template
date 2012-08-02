@@ -33,16 +33,11 @@ def main():
   # ---------------------------------------------------------------
   # Determine paths
   # ---------------------------------------------------------------
-  source_image_path = "/var/lib/vz/images/" + id_from
-  target_image_path = "/var/lib/vz/images/t_" + template_name
-  source_config_path = "/etc/qemu-server/%s.conf" % id_from
-  target_config_path = "/etc/qemu-server/t_%s.conf" % template_name
-
   source_image_path = KVMUtils.image_path(id_from)
   target_image_path = KVMUtils.tpl_image_path(template_name)
   source_config_path = KVMUtils.config_path(id_from)
   target_config_path = KVMUtils.tpl_config_path(template_name)
-  
+
   # ---------------------------------------------------------------
   # Check if source machine exists
   # ---------------------------------------------------------------

@@ -7,6 +7,7 @@ import subprocess
 import logging
 import optparse
 
+from socket import gethostname
 from proxmox_utils import KVMUtils, ShellUtils
                     
 def main():
@@ -35,6 +36,7 @@ def main():
   # ---------------------------------------------------------------
   path_from = KVMUtils.image_path(id_from)
   path_to = KVMUtils.image_path(id_to)
+  hostname = gethostname()
 
   # ---------------------------------------------------------------
   # Check paths
@@ -69,7 +71,7 @@ def main():
   # Copy configuration file
   # ---------------------------------------------------------------
   logging.info("Copying configuration file...")
-  ShellUtils.command(["cp", "/etc/qemu-server/" + id_from + ".conf",  "/etc/qemu-server/" + id_to + ".conf"])
+  ShellUtils.command(["cp", "/etc/pve/nodes/" + hostname + "/qemu-server/" + id_from + ".conf",  "/etc/pve/nodes/" + hostname + "/qemu-server/" + id_to + ".conf"])
   logging.info("Copying done")
 
   # ---------------------------------------------------------------

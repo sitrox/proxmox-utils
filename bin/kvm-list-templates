@@ -7,10 +7,11 @@ import subprocess
 import logging
 import optparse
 
+from socket import gethostname
 from proxmox_utils import KVMUtils, ShellUtils
                     
 def main():
-  paths = os.listdir('/etc/qemu-server')
+  paths = os.listdir('/etc/pve/nodes/%s/qemu-server' % gethostname())
   REGEX_TEMPLATE = '^t_([^.]+)\.conf$'
   
   print "Available KVM templates:"
