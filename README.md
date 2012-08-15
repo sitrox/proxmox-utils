@@ -4,25 +4,25 @@ A simple python-based utility for handling KVM machines on Proxmox 2.x systems.
 
 ## Installation
 
-1. Install setuptools
+- Install setuptools
 
-```bash
-aptitude install python-setuptools
-```
+  ```bash
+  aptitude install python-setuptools
+  ```
 
-2. Get source
+- Get source
 
-```bash
-git clone git://github.com/remofritzsche/proxmox-utils.git
-```
+  ```bash
+  git clone git://github.com/remofritzsche/proxmox-utils.git
+  ```
 
-3. Install
+- Install
 
-```bash
-cd proxmox-utils
-python setup.py build
-sudo python setup.py install
-```
+  ```bash
+  cd proxmox-utils
+  python setup.py build
+  sudo python setup.py install
+  ```
 
 ## Usage
 
