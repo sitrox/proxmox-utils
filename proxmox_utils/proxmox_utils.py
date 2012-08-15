@@ -1,12 +1,13 @@
 import os
 from shell_utils import ShellUtils
+from socket import gethostname
 
 class KVMUtils(object):
   REGEX_TEMPLATE_NAME = '^[a-zA-Z0-9_-]+$'
   
   @classmethod
   def config_path(cls, vm_id):
-    return "/etc/qemu-server/%s.conf" % vm_id
+    return "/etc/pve/nodes/%s/qemu-server/%s.conf" % (gethostname(), vm_id)
     
   @classmethod
   def image_path(cls, vm_id):
