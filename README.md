@@ -1,11 +1,6 @@
 # Proxmox utils
 
 A simple python-based utility for handling KVM machines on Proxmox 2.x systems.
-Since I did this at work, I could not spend much time on documenting it.
-However, as soon as I find time for it, I'll add some more lines of
-documentation here.
-
-Feel free to fork and improve this project!
 
 ## Installation
 
