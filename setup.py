@@ -6,14 +6,12 @@ req_modules = []
 
 setup(
     name='proxmox-utils',
-    author='Remo Fritzsche',
-    author_email='dev@remofritzsche.com',
-    maintainer='Remo Fritzsche',
-    maintainer_email='dev@remofritzsche.com',
+    author='Sitrox',
+    maintainer='Sitrox',
     version='0.0.1',
-    url='https://github.com/remofritzsche/proxmox-utils',
+    url='https://github.com/sitrox/proxmox-utils',
     py_modules=[],
-    download_url='https://github.com/remofritzsche/proxmox-utils/tree',
+    download_url='https://github.com/sitrox/proxmox-utils/tree',
     packages=['proxmox_utils'],
     scripts=['bin/kvm-activate-template', 'bin/kvm-clone', 'bin/kvm-create-template', 'bin/kvm-list-templates', 'bin/kvm-remove'],
     description='Useful shell (python) scripts for managing proxmox virtual environment',
